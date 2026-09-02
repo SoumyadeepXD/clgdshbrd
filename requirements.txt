@@ -1,0 +1,4 @@
+pygame-ce>=2.5.0
+adafruit-circuitpython-ads1x15>=2.3.0
+adafruit-blinka>=8.0.0
+requests>=2.31.0

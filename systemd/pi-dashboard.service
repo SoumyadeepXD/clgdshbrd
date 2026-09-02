@@ -1,0 +1,18 @@
+[Unit]
+Description=Raspberry Pi Local Dashboard (Time, Weather, MQ & Sound Sensors)
+After=network-online.target graphical.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/clgdshbrd
+ExecStart=/home/pi/clgdshbrd/.venv/bin/python main.py
+Environment=PI_DASHBOARD_FULLSCREEN=True
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
