@@ -9,11 +9,11 @@ It cycles between 3 screens (10s each):
 
 ---
 
-## 🤖 How to Boot Directly into Dashboard on Raspberry Pi Startup
+## 🤖 How to Boot Directly into Dashboard on Raspberry Pi Startup (Kiosk Configuration)
 
-Follow these steps to make your Raspberry Pi automatically power on and launch straight into the full-screen dashboard without needing a keyboard or mouse:
+Follow these steps to configure your Raspberry Pi so it automatically boots directly into your `main.py` dashboard file upon power-up:
 
-### Step 1: Enable Desktop / Console Auto-Login
+### Step 1: Enable Desktop Auto-Login
 1. Open terminal on your Raspberry Pi and run:
    ```bash
    sudo raspi-config
@@ -24,39 +24,74 @@ Follow these steps to make your Raspberry Pi automatically power on and launch s
 
 ---
 
-### Step 2: Install and Enable the Systemd Autostart Service
+### Step 2: Configure Systemd Kiosk Service with Your File Path
 
 1. Copy the included systemd kiosk service file:
    ```bash
    sudo cp systemd/pi-dashboard.service /etc/systemd/system/
    ```
 
-2. Reload systemd and enable the autostart daemon:
+2. Open the service file in `nano` to set your Raspberry Pi username and project file path:
+   ```bash
+   sudo nano /etc/systemd/system/pi-dashboard.service
+   ```
+
+3. Ensure `User`, `WorkingDirectory`, and `ExecStart` match your project file location:
+   ```ini
+   [Unit]
+   Description=Raspberry Pi Kiosk Dashboard
+   After=network-online.target graphical.target
+   Wants=network-online.target
+
+   [Service]
+   Type=simple
+
+   # Your Raspberry Pi username (default: pi or your custom username)
+   User=pi
+
+   # Path to your project folder
+   WorkingDirectory=/home/pi/clgdshbrd
+
+   # Path to your Python virtual environment + your dashboard file
+   ExecStart=/home/pi/clgdshbrd/.venv/bin/python main.py
+
+   Environment=PI_DASHBOARD_FULLSCREEN=True
+   Environment=DISPLAY=:0
+   Environment=XAUTHORITY=/home/pi/.Xauthority
+   Restart=always
+   RestartSec=5
+
+   [Install]
+   WantedBy=graphical.target
+   ```
+   *(Press `Ctrl+O`, `Enter` to save, and `Ctrl+X` to exit)*
+
+---
+
+### Step 3: Enable Service and Test Reboot
+
+1. Reload systemd and enable the autostart daemon:
    ```bash
    sudo systemctl daemon-reload
    sudo systemctl enable pi-dashboard.service
    sudo systemctl start pi-dashboard.service
    ```
 
-3. Verify service status:
+2. Reboot your Raspberry Pi:
    ```bash
-   sudo systemctl status pi-dashboard.service
+   sudo reboot
    ```
+
+Upon power-up, your Pi will auto-login and immediately launch the full-screen Glassmorphism Dashboard!
 
 ---
 
-### Step 3: Reboot and Test
-Reboot your Raspberry Pi:
-```bash
-sudo reboot
-```
-Upon power-up, your Pi will auto-login and immediately launch the full-screen Glassmorphism Dashboard!
-
-#### Useful Service Management Commands:
+### 💡 Useful Service Management Commands:
+- **Check Service Status**: `sudo systemctl status pi-dashboard.service`
 - **Stop Dashboard**: `sudo systemctl stop pi-dashboard.service`
 - **Restart Dashboard**: `sudo systemctl restart pi-dashboard.service`
 - **Disable Autostart**: `sudo systemctl disable pi-dashboard.service`
-- **View Real-Time Logs**: `journalctl -u pi-dashboard.service -f`
+- **View Live Logs**: `journalctl -u pi-dashboard.service -f`
 
 ---
 
