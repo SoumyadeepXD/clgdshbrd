@@ -9,6 +9,57 @@ It cycles between 3 screens (10s each):
 
 ---
 
+## 🤖 How to Boot Directly into Dashboard on Raspberry Pi Startup
+
+Follow these steps to make your Raspberry Pi automatically power on and launch straight into the full-screen dashboard without needing a keyboard or mouse:
+
+### Step 1: Enable Desktop / Console Auto-Login
+1. Open terminal on your Raspberry Pi and run:
+   ```bash
+   sudo raspi-config
+   ```
+2. Navigate to **1 System Options** $\rightarrow$ **S5 Boot / Auto Login**.
+3. Choose **B4 Desktop Autologin** (or **B2 Console Autologin** if using CLI mode).
+4. Select **Finish** to save.
+
+---
+
+### Step 2: Install and Enable the Systemd Autostart Service
+
+1. Copy the included systemd kiosk service file:
+   ```bash
+   sudo cp systemd/pi-dashboard.service /etc/systemd/system/
+   ```
+
+2. Reload systemd and enable the autostart daemon:
+   ```bash
+   sudo systemctl daemon-reload
+   sudo systemctl enable pi-dashboard.service
+   sudo systemctl start pi-dashboard.service
+   ```
+
+3. Verify service status:
+   ```bash
+   sudo systemctl status pi-dashboard.service
+   ```
+
+---
+
+### Step 3: Reboot and Test
+Reboot your Raspberry Pi:
+```bash
+sudo reboot
+```
+Upon power-up, your Pi will auto-login and immediately launch the full-screen Glassmorphism Dashboard!
+
+#### Useful Service Management Commands:
+- **Stop Dashboard**: `sudo systemctl stop pi-dashboard.service`
+- **Restart Dashboard**: `sudo systemctl restart pi-dashboard.service`
+- **Disable Autostart**: `sudo systemctl disable pi-dashboard.service`
+- **View Real-Time Logs**: `journalctl -u pi-dashboard.service -f`
+
+---
+
 ## 🔌 Hardware Wiring Schematic & Pinout Guide
 
 ### Complete Pin-to-Pin Connection Diagram
@@ -46,10 +97,6 @@ It cycles between 3 screens (10s each):
    │              │              │ GND  ◄─── GND (Pi Pin 6) │
    │              └─────────────►│ AOUT ───► ADS1115 A1     │
    │                             └──────────────────────────┘
-   ▼
- ADS1115 Analog Input Channels:
-   • Channel A0 ◄─── MQ Gas Sensor AOUT
-   • Channel A1 ◄─── Sound Sensor AOUT
 ```
 
 ---
@@ -94,12 +141,3 @@ It cycles between 3 screens (10s each):
    sudo i2cdetect -y 1
    ```
    *(You should see `48` at address `0x48`)*
-
----
-
-## 🚀 Execution
-
-```bash
-cd ~/Developer/clgdshbrd
-PI_DASHBOARD_FULLSCREEN=True .venv/bin/python main.py
-```
