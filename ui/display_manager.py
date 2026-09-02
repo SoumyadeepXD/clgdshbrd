@@ -7,12 +7,9 @@ from .screens import TimeScreen, WeatherScreen, SensorScreen
 
 class DisplayManager:
     """
-    3-Screen Rotating Minimalist Glassmorphism UI Manager:
-    1. Time & Date (10s)
-    2. Weather of Kolkata (New Town) (10s)
-    3. Noise, Room Humidity & Air Quality AQI (10s)
-    
-    100% Emoji-Free typography for clean font rendering across all platforms.
+    3-Screen Rotating Minimalist Glassmorphism UI Manager.
+    Automatically detects display resolution and dynamically scales font sizes
+    and UI cards so elements fill the screen proportionally on ANY display.
     """
     def __init__(self, sensor_mq, sensor_sound, weather_service):
         pygame.init()
@@ -24,8 +21,18 @@ class DisplayManager:
         self.weather = weather_service
         
         flags = pygame.FULLSCREEN if config.FULLSCREEN else pygame.RESIZABLE
-        self.surface = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT), flags)
-        pygame.display.set_caption("Pi Dashboard - Kolkata New Town")
+        
+        # 1. Detect native screen resolution for FULLSCREEN or Windowed mode
+        if config.FULLSCREEN:
+            info = pygame.display.Info()
+            self.width = info.current_w if info.current_w > 0 else config.SCREEN_WIDTH
+            self.height = info.current_h if info.current_h > 0 else config.SCREEN_HEIGHT
+        else:
+            self.width = config.SCREEN_WIDTH
+            self.height = config.SCREEN_HEIGHT
+            
+        self.surface = pygame.display.set_mode((self.width, self.height), flags)
+        pygame.display.set_caption("Pi Dashboard")
         
         if config.FULLSCREEN:
             pygame.mouse.set_visible(False)
@@ -33,13 +40,20 @@ class DisplayManager:
         self.clock = pygame.time.Clock()
         self.running = True
         
+        # 2. Dynamic Font Scaling relative to screen height
         font_name = pygame.font.get_default_font()
+        clock_sz = int(self.height * 0.28)
+        heading_sz = int(self.height * 0.065)
+        subhead_sz = int(self.height * 0.045)
+        small_sz = int(self.height * 0.035)
+        badge_sz = int(self.height * 0.028)
+        
         self.fonts = {
-            "giant_clock": pygame.font.Font(font_name, 100),
-            "heading": pygame.font.Font(font_name, 22),
-            "subhead": pygame.font.Font(font_name, 16),
-            "small": pygame.font.Font(font_name, 13),
-            "badge": pygame.font.Font(font_name, 11)
+            "giant_clock": pygame.font.Font(font_name, max(36, clock_sz)),
+            "heading": pygame.font.Font(font_name, max(18, heading_sz)),
+            "subhead": pygame.font.Font(font_name, max(14, subhead_sz)),
+            "small": pygame.font.Font(font_name, max(12, small_sz)),
+            "badge": pygame.font.Font(font_name, max(10, badge_sz))
         }
         
         self.time_screen = TimeScreen(self.surface, self.fonts)
@@ -87,14 +101,12 @@ class DisplayManager:
             self._next_screen()
 
     def _render(self):
-        # Render Ambient Glass Background
         draw_ambient_background(self.surface)
         
         mq_data = self.mq.get_readings()
         sound_data = self.sound.get_readings()
         weather_data = self.weather.get_weather()
         
-        # 3-Screen Rotation
         active_screen = self.screens[self.current_screen_idx]
         if active_screen == "TIME":
             self.time_screen.draw(mq_data, sound_data)
@@ -103,10 +115,10 @@ class DisplayManager:
         elif active_screen == "SENSORS":
             self.sensor_screen.draw(mq_data, sound_data, weather_data)
             
-        # Subtle 2px Top Timer Progress Line
+        # Responsive 2px Top Progress Line
         w, _ = self.surface.get_size()
         elapsed = time.time() - self.screen_switch_time
         progress = min(1.0, max(0.0, elapsed / config.ROTATION_INTERVAL))
-        pygame.draw.rect(self.surface, (255, 255, 255, 140), (0, 0, int(w * progress), 2))
+        pygame.draw.rect(self.surface, (255, 255, 255, 140), (0, 0, int(w * progress), 3))
         
         pygame.display.flip()

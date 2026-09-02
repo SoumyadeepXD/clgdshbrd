@@ -14,9 +14,9 @@ SCREEN_HEIGHT = int(os.environ.get("PI_DASHBOARD_HEIGHT", "480"))
 # ==============================================================================
 # WEATHER API CONFIGURATION (Kolkata New Town Coordinates)
 # ==============================================================================
-WEATHER_LATITUDE = float(os.environ.get("WEATHER_LAT", "22.5833"))
-WEATHER_LONGITUDE = float(os.environ.get("WEATHER_LON", "88.4667"))
-WEATHER_CITY_NAME = os.environ.get("WEATHER_CITY", "Kolkata (New Town)")
+WEATHER_LATITUDE = float(os.environ.get("WEATHER_LAT", "22.5605"))
+WEATHER_LONGITUDE = float(os.environ.get("WEATHER_LON", "88.4904"))
+WEATHER_CITY_NAME = os.environ.get("WEATHER_CITY", "New Town, Kolkata")
 WEATHER_UPDATE_INTERVAL = 600  # 10 minutes
 
 # ==============================================================================
