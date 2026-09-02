@@ -21,13 +21,14 @@ WEATHER_UPDATE_INTERVAL = 600  # 10 minutes
 
 # ==============================================================================
 # HARDWARE & SENSOR CONFIGURATION (ADS1115 / ADS1116 I2C ADC)
+# Channel Map: A0 = Humidity, A1 = MQ Gas, A3 = Noise
 # ==============================================================================
 FORCE_MOCK_SENSORS = os.environ.get("FORCE_MOCK_SENSORS", "False").lower() == "true"
 
 ADS1115_GAIN = 1
-MQ_CHANNEL = 0          # A0: MQ Gas Sensor (AQI / PPM)
-SOUND_CHANNEL = 1       # A1: Sound Sensor (Decibel dB)
-HUMIDITY_CHANNEL = 2    # A2: Local Hardware Humidity Sensor (Analog % RH)
+HUMIDITY_CHANNEL = 0    # A0: Local Humidity Sensor (% RH)
+MQ_CHANNEL = 1          # A1: MQ Gas Sensor (AQI / PPM)
+SOUND_CHANNEL = 3       # A3: Sound / Noise Sensor (Decibel dB)
 
 MQ_CLEAN_AIR_RO = 10.0
 SOUND_V_REF = 0.005
