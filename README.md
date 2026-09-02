@@ -5,7 +5,7 @@ A native, lightweight Python dashboard built specifically for **Raspberry Pi** t
 It cycles between 3 screens (10s each):
 1. **Time & Date**
 2. **Weather of Kolkata (New Town)**
-3. **Room Metrics (Noise dB, Room Humidity %, Air Quality AQI/PPM)**
+3. **Local Hardware Room Telemetry (Noise dB, Local Humidity %, Air Quality AQI/PPM)**
 
 ---
 
@@ -82,17 +82,6 @@ Follow these steps to configure your Raspberry Pi so it automatically boots dire
    sudo reboot
    ```
 
-Upon power-up, your Pi will auto-login and immediately launch the full-screen Glassmorphism Dashboard!
-
----
-
-### 💡 Useful Service Management Commands:
-- **Check Service Status**: `sudo systemctl status pi-dashboard.service`
-- **Stop Dashboard**: `sudo systemctl stop pi-dashboard.service`
-- **Restart Dashboard**: `sudo systemctl restart pi-dashboard.service`
-- **Disable Autostart**: `sudo systemctl disable pi-dashboard.service`
-- **View Live Logs**: `journalctl -u pi-dashboard.service -f`
-
 ---
 
 ## 🔌 Hardware Wiring Schematic & Pinout Guide
@@ -111,7 +100,7 @@ Upon power-up, your Pi will auto-login and immediately launch the full-screen Gl
        │ (SDA Line)  │ (SCL Line)      │      │      │
        ▼             ▼                 ▼      ▼      ▼
    ┌────────────────────────────────────────────────────────┐
-   │                  ADS1115 / ADS1015 I2C ADC             │
+   │             ADS1115 / ADS1116 I2C ADC                  │
    ├─────────┬─────────┬─────────┬──────────┬───────────────┤
    │   VDD   │   GND   │   SCL   │   SDA    │  ADDR         │
    └────┬────┴────┬────┴────┬────┴────┬─────┴───┬───────────┘
@@ -130,15 +119,27 @@ Upon power-up, your Pi will auto-login and immediately launch the full-screen Gl
    │              │              ├──────────────────────────┤
    │              │              │ VCC  ◄─── 3.3V (Pi Pin 1)│
    │              │              │ GND  ◄─── GND (Pi Pin 6) │
-   │              └─────────────►│ AOUT ───► ADS1115 A1     │
+   │              ├─────────────►│ AOUT ───► ADS1115 A1     │
+   │              │              └──────────────────────────┘
+   │              │              ┌──────────────────────────┐
+   │              │              │ HUMIDITY SENSOR          │
+   │              │              ├──────────────────────────┤
+   │              │              │ VCC  ◄─── 3.3V (Pi Pin 1)│
+   │              │              │ GND  ◄─── GND (Pi Pin 6) │
+   │              └─────────────►│ AOUT ───► ADS1115 A2     │
    │                             └──────────────────────────┘
+   ▼
+ ADS1115 Analog Input Channels:
+   • Channel A0 ◄─── MQ Gas Sensor AOUT
+   • Channel A1 ◄─── Sound Sensor AOUT
+   • Channel A2 ◄─── Humidity Sensor AOUT
 ```
 
 ---
 
 ## 📌 Pinout Table
 
-### 1. ADS1115 ADC $\rightarrow$ Raspberry Pi
+### 1. ADS1115 / ADS1116 ADC $\rightarrow$ Raspberry Pi
 | ADS1115 Pin | Raspberry Pi GPIO Pin | Physical Pin # | Description |
 | :--- | :--- | :--- | :--- |
 | **VDD** | 3.3V Power | **Pin 1** | Power Supply |
@@ -147,19 +148,12 @@ Upon power-up, your Pi will auto-login and immediately launch the full-screen Gl
 | **SDA** | **GPIO 2 (SDA)** | **Pin 3** | **I2C Data Line** |
 | **ADDR** | Ground | **Pin 6** | Sets I2C Address `0x48` |
 
-### 2. MQ Gas Sensor
-| MQ Sensor Pin | Connection Target | Description |
-| :--- | :--- | :--- |
-| **VCC** | Raspberry Pi **Pin 2 (5V)** | 5V Power for internal heater coil |
-| **GND** | Raspberry Pi **Pin 6 (GND)** | Shared Ground |
-| **AOUT** | ADS1115 **A0 Pin** | Analog Gas Output Signal |
-
-### 3. Sound Decibel Sensor
-| Sound Sensor Pin | Connection Target | Description |
-| :--- | :--- | :--- |
-| **VCC** | Raspberry Pi **Pin 1 (3.3V)** | 3.3V Power Supply |
-| **GND** | Raspberry Pi **Pin 6 (GND)** | Shared Ground |
-| **AOUT** | ADS1115 **A1 Pin** | Analog Sound Output Signal |
+### 2. Local Hardware Sensors to ADS1115 Channels
+| Sensor | Sensor Pin | ADS1115 Channel | Description |
+| :--- | :--- | :--- | :--- |
+| **MQ Gas Sensor** | **AOUT** | **Channel A0** | Air Quality / Gas PPM Signal |
+| **Sound Sensor** | **AOUT** | **Channel A1** | Noise Decibel (dB) Signal |
+| **Humidity Sensor** | **AOUT** | **Channel A2** | Local Room Humidity (% RH) Signal |
 
 ---
 

@@ -2,13 +2,13 @@
 """
 Raspberry Pi Standalone Local Dashboard
 Runs locally without external browser dependencies.
-Cycles between Time (10s), Weather (10s), and Sensors Telemetry (10s).
+Cycles between Time (10s), Weather (10s), and Local Hardware Sensors (10s).
 """
 import sys
 import time
 import signal
 import config
-from sensors import ADS1115Reader, MQSensor, SoundSensor
+from sensors import ADS1115Reader, MQSensor, SoundSensor, HumiditySensor
 from weather import WeatherService
 from ui import DisplayManager
 
@@ -21,12 +21,13 @@ def main():
     print(f"Weather Location: {config.WEATHER_CITY_NAME} ({config.WEATHER_LATITUDE}, {config.WEATHER_LONGITUDE})")
     print("======================================================")
     
-    # 1. Initialize Hardware ADC / Mock Reader
+    # 1. Initialize Hardware ADC (ADS1115 / ADS1116)
     adc = ADS1115Reader(gain=config.ADS1115_GAIN)
     
-    # 2. Initialize Sensors
+    # 2. Initialize Local Hardware Sensors (A0: MQ, A1: Sound, A2: Humidity)
     mq_sensor = MQSensor(adc, channel=config.MQ_CHANNEL)
     sound_sensor = SoundSensor(adc, channel=config.SOUND_CHANNEL)
+    humidity_sensor = HumiditySensor(adc, channel=config.HUMIDITY_CHANNEL)
     
     # 3. Initialize Background Weather Fetcher
     weather = WeatherService(
@@ -40,6 +41,7 @@ def main():
         app = DisplayManager(
             sensor_mq=mq_sensor,
             sensor_sound=sound_sensor,
+            sensor_humidity=humidity_sensor,
             weather_service=weather
         )
         

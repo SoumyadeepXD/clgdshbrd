@@ -11,13 +11,14 @@ class DisplayManager:
     Automatically detects display resolution and dynamically scales font sizes
     and UI cards so elements fill the screen proportionally on ANY display.
     """
-    def __init__(self, sensor_mq, sensor_sound, weather_service):
+    def __init__(self, sensor_mq, sensor_sound, sensor_humidity, weather_service):
         pygame.init()
         if hasattr(pygame, 'font') and not pygame.font.get_init():
             pygame.font.init()
         
         self.mq = sensor_mq
         self.sound = sensor_sound
+        self.humidity = sensor_humidity
         self.weather = weather_service
         
         flags = pygame.FULLSCREEN if config.FULLSCREEN else pygame.RESIZABLE
@@ -105,6 +106,7 @@ class DisplayManager:
         
         mq_data = self.mq.get_readings()
         sound_data = self.sound.get_readings()
+        humidity_data = self.humidity.get_readings()
         weather_data = self.weather.get_weather()
         
         active_screen = self.screens[self.current_screen_idx]
@@ -113,7 +115,7 @@ class DisplayManager:
         elif active_screen == "WEATHER":
             self.weather_screen.draw(weather_data)
         elif active_screen == "SENSORS":
-            self.sensor_screen.draw(mq_data, sound_data, weather_data)
+            self.sensor_screen.draw(mq_data, sound_data, humidity_data)
             
         # Responsive 2px Top Progress Line
         w, _ = self.surface.get_size()

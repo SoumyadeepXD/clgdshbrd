@@ -4,14 +4,14 @@ from ui.glass_ui import draw_glass_panel
 
 class SensorScreen:
     """
-    Screen 3: Environment & Room Metrics View.
-    Fully responsive layout scaling proportionally to any display resolution.
+    Screen 3: Local Hardware Environment & Room Metrics View.
+    Displays Noise (A1), Local Room Humidity (A2), and Air Quality / AQI (A0).
     """
     def __init__(self, surface: pygame.Surface, fonts: dict):
         self.surface = surface
         self.fonts = fonts
 
-    def draw(self, mq_data: dict, sound_data: dict, weather_data: dict):
+    def draw(self, mq_data: dict, sound_data: dict, humidity_data: dict):
         rect = self.surface.get_rect()
         w, h = rect.width, rect.height
         
@@ -20,7 +20,7 @@ class SensorScreen:
         
         draw_glass_panel(self.surface, card_rect, border_radius=int(h * 0.05), bg_alpha=140, border_alpha=35, glow_alpha=100)
         
-        title_surf = self.fonts["badge"].render("ENVIRONMENT & ROOM METRICS", True, config.TEXT_MUTED)
+        title_surf = self.fonts["badge"].render("HARDWARE SENSORS & ROOM TELEMETRY", True, config.TEXT_MUTED)
         self.surface.blit(title_surf, (card_rect.centerx - title_surf.get_width() // 2, card_rect.top + int(card_h * 0.07)))
         
         # 3 Side-by-Side Glass Metric Cards
@@ -32,7 +32,7 @@ class SensorScreen:
         
         metrics = [
             ("NOISE LEVEL", f"{sound_data.get('db', '--')} dB", sound_data.get('status', 'NORMAL')),
-            ("HUMIDITY", weather_data.get('humidity', '--'), "ROOM AMBIENT"),
+            ("ROOM HUMIDITY", humidity_data.get('humidity', '--'), humidity_data.get('status', 'COMFORTABLE')),
             ("AIR QUALITY", f"{mq_data.get('ppm', '--')} PPM", mq_data.get('status', 'GOOD'))
         ]
         
