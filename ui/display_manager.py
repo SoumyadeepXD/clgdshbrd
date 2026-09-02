@@ -7,9 +7,8 @@ from .screens import TimeScreen, WeatherScreen, SensorScreen
 
 class DisplayManager:
     """
-    3-Screen Rotating Minimalist Glassmorphism UI Manager.
-    Automatically detects display resolution and dynamically scales font sizes
-    and UI cards so elements fill the screen proportionally on ANY display.
+    3-Screen Rotating Fullscreen Minimalist Glassmorphism UI Manager.
+    Configured for maximum card size filling ~95% of the screen area with massive fonts.
     """
     def __init__(self, sensor_mq, sensor_sound, sensor_humidity, weather_service):
         pygame.init()
@@ -23,7 +22,6 @@ class DisplayManager:
         
         flags = pygame.FULLSCREEN if config.FULLSCREEN else pygame.RESIZABLE
         
-        # 1. Detect native screen resolution for FULLSCREEN or Windowed mode
         if config.FULLSCREEN:
             info = pygame.display.Info()
             self.width = info.current_w if info.current_w > 0 else config.SCREEN_WIDTH
@@ -41,20 +39,20 @@ class DisplayManager:
         self.clock = pygame.time.Clock()
         self.running = True
         
-        # 2. Dynamic Font Scaling relative to screen height
+        # Giant Font Scaling relative to screen height
         font_name = pygame.font.get_default_font()
-        clock_sz = int(self.height * 0.28)
-        heading_sz = int(self.height * 0.065)
-        subhead_sz = int(self.height * 0.045)
-        small_sz = int(self.height * 0.035)
-        badge_sz = int(self.height * 0.028)
+        clock_sz = int(self.height * 0.36)     # Massive clock font filling screen center
+        heading_sz = int(self.height * 0.08)   # Big headings
+        subhead_sz = int(self.height * 0.055)
+        small_sz = int(self.height * 0.042)
+        badge_sz = int(self.height * 0.035)
         
         self.fonts = {
-            "giant_clock": pygame.font.Font(font_name, max(36, clock_sz)),
-            "heading": pygame.font.Font(font_name, max(18, heading_sz)),
-            "subhead": pygame.font.Font(font_name, max(14, subhead_sz)),
-            "small": pygame.font.Font(font_name, max(12, small_sz)),
-            "badge": pygame.font.Font(font_name, max(10, badge_sz))
+            "giant_clock": pygame.font.Font(font_name, max(42, clock_sz)),
+            "heading": pygame.font.Font(font_name, max(22, heading_sz)),
+            "subhead": pygame.font.Font(font_name, max(16, subhead_sz)),
+            "small": pygame.font.Font(font_name, max(13, small_sz)),
+            "badge": pygame.font.Font(font_name, max(11, badge_sz))
         }
         
         self.time_screen = TimeScreen(self.surface, self.fonts)
@@ -117,7 +115,7 @@ class DisplayManager:
         elif active_screen == "SENSORS":
             self.sensor_screen.draw(mq_data, sound_data, humidity_data)
             
-        # Responsive 2px Top Progress Line
+        # Top Timer Line
         w, _ = self.surface.get_size()
         elapsed = time.time() - self.screen_switch_time
         progress = min(1.0, max(0.0, elapsed / config.ROTATION_INTERVAL))
