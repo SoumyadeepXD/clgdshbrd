@@ -5,80 +5,100 @@ A native, lightweight Python dashboard built specifically for **Raspberry Pi** t
 It cycles between 3 screens (10s each):
 1. **Time & Date**
 2. **Weather of Kolkata (New Town)**
-3. **Local Hardware Room Telemetry (Local Humidity A0, MQ Gas A1, Noise dB A3)**
+3. **Local Hardware Room Telemetry (DHT Sensor GPIO 4, Smoke Sensor Pin 11, Mic Sensor Pin 13)**
 
 ---
 
-## 🔌 Hardware Wiring Schematic & Pinout Guide
+## 🔌 Hardware Wiring Schematic & Pinout Guide (Direct GPIO)
+
+No external ADC (ADS1115) required! All sensors connect directly to the Raspberry Pi 40-pin GPIO header.
 
 ### Complete Pin-to-Pin Connection Diagram
 
 ```
        RASPBERRY PI 40-PIN GPIO HEADER
-      ┌──────────────────────────────────┐
-      │  (1) 3.3V  [PWR]  │ (2) 5V  [PWR]┼───────────┐ (5V Power Rail)
-      │  (3) GPIO 2 [SDA] │ (4) 5V  [PWR]│           │
-      │  (5) GPIO 3 [SCL] │ (6) GND [GND]┼────┐      │
-      └───────┬──────┬──────────┬────────┘    │      │
-              │      │          │             │      │
-       ┌──────┘      │          └──────┐      │ (GND Rail)
-       │ (SDA Line)  │ (SCL Line)      │      │      │
-       ▼             ▼                 ▼      ▼      ▼
-   ┌────────────────────────────────────────────────────────┐
-   │             ADS1115 / ADS1116 I2C ADC                  │
-   ├─────────┬─────────┬─────────┬──────────┬───────────────┤
-   │   VDD   │   GND   │   SCL   │   SDA    │  ADDR         │
-   └────┬────┴────┬────┴────┬────┴────┬─────┴───┬───────────┘
-        │         │         │         │         │
-    (3.3V Pin1) (GND Pin6) (SCL Pin5)(SDA Pin3)(GND Pin6)
-                  │
-                  │              ┌──────────────────────────┐
-                  ├─────────────►│ HUMIDITY SENSOR          │
-                  │              ├──────────────────────────┤
-                  │              │ VCC  ◄─── 3.3V (Pi Pin 1)│
-                  │              │ GND  ◄─── GND (Pi Pin 6) │
-   ┌──────────────┼─────────────►│ AOUT ───► ADS1115 A0     │
-   │              │              └──────────────────────────┘
-   │              │              ┌──────────────────────────┐
-   │              │              │ MQ GAS SENSOR            │
-   │              │              ├──────────────────────────┤
-   │              │              │ VCC  ◄─── 5V (Pi Pin 2)  │
-   │              │              │ GND  ◄─── GND (Pi Pin 6) │
-   │              ├─────────────►│ AOUT ───► ADS1115 A1     │
-   │              │              └──────────────────────────┘
-   │              │              ┌──────────────────────────┐
-   │              │              │ SOUND / NOISE SENSOR     │
-   │              │              ├──────────────────────────┤
-   │              │              │ VCC  ◄─── 3.3V (Pi Pin 1)│
-   │              │              │ GND  ◄─── GND (Pi Pin 6) │
-   │              └─────────────►│ AOUT ───► ADS1115 A3     │
-   │                             └──────────────────────────┘
-   ▼
- ADS1115 Analog Input Channels:
-   • Channel A0 ◄─── Humidity Sensor AOUT
-   • Channel A1 ◄─── MQ Gas Sensor AOUT
-   • Channel A3 ◄─── Sound / Noise Sensor AOUT
+      ┌─────────────────────────────────────────┐
+      │  (1) 3.3V [PWR]   │  (2) 5V  [PWR]──────┼──────────┐ (5V Power Rail)
+      │  (3) GPIO 2       │  (4) 5V  [PWR]      │          │
+      │  (5) GPIO 3       │  (6) GND [GND]──────┼────┐     │
+      │  (7) GPIO 4──────┐│  (8) GPIO 14        │    │     │
+      │  (9) GND         ││ (10) GPIO 15        │    │     │
+      │ (11) PIN 11 ─────┼┼─┐(12) GPIO 18       │    │     │
+      │ (13) PIN 13 ──┐  ││ │                   │    │     │
+      └───────┬───────┼──┼┴─┼───────────────────┘    │     │
+              │       │  │  │ (Pin 11 Signal)        │     │
+              │       │  │  ▼                        │     │
+              │       │  │  ┌────────────────────────┴───┐ │
+              │       │  │  │ SMOKE SENSOR (MQ Series)   │ │
+              │       │  │  ├────────────────────────────┤ │
+              │       │  │  │ VCC ◄─── 5V (Pi Pin 2) ────┼─┘
+              │       │  │  │ GND ◄─── GND (Pi Pin 6) ───┤
+              │       │  │  │ DO  ───► Pi Pin 11         │
+              │       │  │  └────────────────────────────┘
+              │       │  │                           │
+              │       │  │ (GPIO 4 Signal)           │
+              │       │  ▼                           │
+              │       │  ┌───────────────────────────┴───┐
+              │       │  │ DHT SENSOR (DHT11 / DHT22)    │
+              │       │  ├───────────────────────────────┤
+              │       │  │ VCC ◄─── 3.3V (Pi Pin 1) ─────┤
+              │       │  │ GND ◄─── GND (Pi Pin 6) ──────┤
+              │       │  │ DATA ──► Pi GPIO 4 (Pin 7)    │
+              │       │  └───────────────────────────────┘
+              │       │                              │
+              │ (Pin 13 Signal)                      │
+              ▼                                      │
+              ┌──────────────────────────────────────┴───┐
+              │ MICROPHONE / SOUND SENSOR (KY-037/038)   │
+              ├──────────────────────────────────────────┤
+              │ VCC  ◄─── 3.3V (Pi Pin 1)                │
+              │ GND  ◄─── GND (Pi Pin 6) ────────────────┤
+              │ DO   ───► Pi Pin 13                      │
+              └──────────────────────────────────────────┘
 ```
 
 ---
 
 ## 📌 Pinout Table
 
-### 1. ADS1115 / ADS1116 ADC $\rightarrow$ Raspberry Pi
-| ADS1115 Pin | Raspberry Pi GPIO Pin | Physical Pin # | Description |
-| :--- | :--- | :--- | :--- |
-| **VDD** | 3.3V Power | **Pin 1** | Power Supply |
-| **GND** | Ground | **Pin 6** | Ground Line |
-| **SCL** | **GPIO 3 (SCL)** | **Pin 5** | **I2C Clock Line** |
-| **SDA** | **GPIO 2 (SDA)** | **Pin 3** | **I2C Data Line** |
-| **ADDR** | Ground | **Pin 6** | Sets I2C Address `0x48` |
+### Sensor Pin Connections
 
-### 2. Local Hardware Sensors to ADS1115 Channels
-| Sensor | Sensor Pin | ADS1115 Channel | Description |
+| Sensor | Sensor Pin | Raspberry Pi Pin | Description |
 | :--- | :--- | :--- | :--- |
-| **Humidity Sensor** | **AOUT** | **Channel A0** | Local Room Humidity (% RH) Signal |
-| **MQ Gas Sensor** | **AOUT** | **Channel A1** | Air Quality / Gas PPM Signal |
-| **Sound / Noise Sensor** | **AOUT** | **Channel A3** | Noise Decibel (dB) Signal |
+| **DHT11 / DHT22** | **VCC** | **Pin 1 (3.3V)** | Power Supply |
+| | **GND** | **Pin 6 (GND)** | Ground |
+| | **DATA / OUT** | **GPIO 4 (Physical Pin 7)** | 1-Wire Digital Climate Telemetry |
+| **Smoke Sensor (MQ)**| **VCC** | **Pin 2 (5V)** | Power Supply (MQ heater requires 5V) |
+| | **GND** | **Pin 6 (GND)** | Ground |
+| | **DO (Digital Out)** | **Pin 11** | Gas / Smoke Detection Trigger |
+| **Mic / Sound Sensor** | **VCC** | **Pin 1 (3.3V)** | Power Supply |
+| | **GND** | **Pin 6 (GND)** | Ground |
+| | **DO (Digital Out)** | **Pin 13** | Acoustic / Sound Detection Trigger |
+
+> [!NOTE]
+> **Pin Numbering Mode**:
+> - By default, pins are interpreted as **BCM GPIO numbers** (DHT = GPIO 4, Smoke = GPIO 11, Mic = GPIO 13).
+> - If you wired by **Physical Board Pin numbers** (Pin 11 = BCM 17, Pin 13 = BCM 27), you can enable automatic physical pin translation by running with `USE_PHYSICAL_PINS=true` or changing the setting in `config.py`.
+
+---
+
+## 🚀 Installation & Setup on Raspberry Pi
+
+1. Install system prerequisites (if needed for GPIO / DHT on Raspberry Pi OS):
+   ```bash
+   sudo apt update
+   sudo apt install -y python3-pip python3-pygame python3-gpiozero libgpiod2
+   ```
+
+2. Install Python dependencies:
+   ```bash
+   pip3 install -r requirements.txt
+   ```
+
+3. Run the dashboard:
+   ```bash
+   python3 main.py
+   ```
 
 ---
 

@@ -20,16 +20,38 @@ WEATHER_CITY_NAME = os.environ.get("WEATHER_CITY", "Kolkata (New Town)")
 WEATHER_UPDATE_INTERVAL = 600  # 10 minutes
 
 # ==============================================================================
-# HARDWARE & SENSOR CONFIGURATION (ADS1115 / ADS1116 I2C ADC)
-# Channel Map: A0 = Humidity, A1 = MQ Gas, A3 = Noise
+# HARDWARE & SENSOR CONFIGURATION (DIRECT RASPBERRY PI GPIO PINS)
+# DHT Sensor: GPIO 4
+# Smoke Sensor: Pin 11 (Digital DO)
+# Mic / Sound Sensor: Pin 13 (Digital DO)
 # ==============================================================================
 FORCE_MOCK_SENSORS = os.environ.get("FORCE_MOCK_SENSORS", "False").lower() == "true"
 
-ADS1115_GAIN = 1
-HUMIDITY_CHANNEL = 0    # A0: Local Humidity Sensor (% RH)
-MQ_CHANNEL = 1          # A1: MQ Gas Sensor (AQI / PPM)
-SOUND_CHANNEL = 3       # A3: Sound / Noise Sensor (Decibel dB)
+# Pin Numbering Mode: Default is BCM GPIO numbers (GPIO 4, GPIO 11, GPIO 13).
+# If you wired directly to Physical Header Pins on the Raspberry Pi board:
+#   Physical Pin 7  -> BCM GPIO 4
+#   Physical Pin 11 -> BCM GPIO 17
+#   Physical Pin 13 -> BCM GPIO 27
+# Set USE_PHYSICAL_PINS = True to automatically map physical pins 11 and 13 to BCM 17 and 27.
+USE_PHYSICAL_PINS = os.environ.get("USE_PHYSICAL_PINS", "False").lower() == "true"
 
+# DHT Sensor (Temperature & Humidity)
+DHT_PIN = int(os.environ.get("DHT_PIN", "4"))           # Default: GPIO 4 (Physical Pin 7)
+DHT_TYPE = int(os.environ.get("DHT_TYPE", "11"))         # 11 for DHT11, 22 for DHT22 / AM2302
+
+# Smoke / Gas Sensor (Digital DO Pin)
+SMOKE_PIN = int(os.environ.get("SMOKE_PIN", "11"))       # Default: Pin 11
+SMOKE_ACTIVE_LOW = os.environ.get("SMOKE_ACTIVE_LOW", "True").lower() == "true"  # DO goes LOW on smoke detect
+
+# Microphone / Sound Sensor (Digital DO Pin)
+MIC_PIN = int(os.environ.get("MIC_PIN", "13"))           # Default: Pin 13
+MIC_ACTIVE_LOW = os.environ.get("MIC_ACTIVE_LOW", "True").lower() == "true"      # DO goes LOW on sound detect
+
+# Backward-compatibility fallback variables (Deprecated ADC settings)
+ADS1115_GAIN = 1
+HUMIDITY_CHANNEL = 0
+MQ_CHANNEL = 1
+SOUND_CHANNEL = 3
 MQ_CLEAN_AIR_RO = 10.0
 SOUND_V_REF = 0.005
 SOUND_DB_OFFSET = 45.0

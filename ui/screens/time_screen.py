@@ -13,7 +13,7 @@ class TimeScreen:
         self.surface = surface
         self.fonts = fonts
 
-    def draw(self, mq_data: dict, sound_data: dict):
+    def draw(self, *args, **kwargs):
         rect = self.surface.get_rect()
         w, h = rect.width, rect.height
         

@@ -2,13 +2,13 @@
 """
 Raspberry Pi Standalone Local Dashboard
 Runs locally without external browser dependencies.
-Cycles between Time (10s), Weather (10s), and Local Hardware Sensors (10s).
+Cycles between Time (10s), Weather (10s), and Local Hardware GPIO Sensors (10s).
 """
 import sys
 import time
 import signal
 import config
-from sensors import ADS1115Reader, MQSensor, SoundSensor, HumiditySensor
+from sensors import DHTSensor, SmokeSensor, MicSensor
 from weather import WeatherService
 from ui import DisplayManager
 
@@ -19,29 +19,30 @@ def main():
     print(f"Screen Rotation Interval: {config.ROTATION_INTERVAL} seconds")
     print(f"Target Resolution: {config.SCREEN_WIDTH}x{config.SCREEN_HEIGHT}")
     print(f"Weather Location: {config.WEATHER_CITY_NAME} ({config.WEATHER_LATITUDE}, {config.WEATHER_LONGITUDE})")
+    print("------------------------------------------------------")
+    print(f"DHT Sensor (Temp/Humidity): GPIO {config.DHT_PIN}")
+    print(f"Smoke Sensor (Gas/Smoke DO): Pin {config.SMOKE_PIN}")
+    print(f"Microphone Sensor (Sound DO): Pin {config.MIC_PIN}")
     print("======================================================")
     
-    # 1. Initialize Hardware ADC (ADS1115 / ADS1116)
-    adc = ADS1115Reader(gain=config.ADS1115_GAIN)
+    # 1. Initialize Direct GPIO Sensors
+    dht_sensor = DHTSensor(pin=config.DHT_PIN, sensor_type=config.DHT_TYPE)
+    smoke_sensor = SmokeSensor(pin=config.SMOKE_PIN, active_low=config.SMOKE_ACTIVE_LOW)
+    mic_sensor = MicSensor(pin=config.MIC_PIN, active_low=config.MIC_ACTIVE_LOW)
     
-    # 2. Initialize Local Hardware Sensors (A0: MQ, A1: Sound, A2: Humidity)
-    mq_sensor = MQSensor(adc, channel=config.MQ_CHANNEL)
-    sound_sensor = SoundSensor(adc, channel=config.SOUND_CHANNEL)
-    humidity_sensor = HumiditySensor(adc, channel=config.HUMIDITY_CHANNEL)
-    
-    # 3. Initialize Background Weather Fetcher
+    # 2. Initialize Background Weather Fetcher
     weather = WeatherService(
         lat=config.WEATHER_LATITUDE,
         lon=config.WEATHER_LONGITUDE,
         city=config.WEATHER_CITY_NAME
     )
     
-    # 4. Launch Pygame Display Manager
+    # 3. Launch Pygame Display Manager
     try:
         app = DisplayManager(
-            sensor_mq=mq_sensor,
-            sensor_sound=sound_sensor,
-            sensor_humidity=humidity_sensor,
+            sensor_smoke=smoke_sensor,
+            sensor_mic=mic_sensor,
+            sensor_dht=dht_sensor,
             weather_service=weather
         )
         
