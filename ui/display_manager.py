@@ -7,20 +7,19 @@ from .screens import TimeScreen, WeatherScreen, SensorScreen
 
 class DisplayManager:
     """
-    3-Screen Rotating Fullscreen Minimalist Glassmorphism UI Manager.
-    Configured for maximum card size filling ~95% of the screen area with massive fonts.
-    Supports direct GPIO Sensors: DHT (GPIO 4), Smoke (Pin 11), Mic (Pin 13).
+    3-Screen Rotating Fullscreen Minimalist Glassmorphic UI Manager.
+    Automatically detects display resolution and dynamically scales font sizes
+    and UI cards so elements fill the screen proportionally on ANY display.
+    Renders real-time numeric telemetry for Humidity, Air Quality PPM, and Sound dB.
     """
-    def __init__(self, sensor_smoke=None, sensor_mic=None, sensor_dht=None, weather_service=None,
-                 sensor_mq=None, sensor_sound=None, sensor_humidity=None):
+    def __init__(self, sensor_mq=None, sensor_sound=None, sensor_humidity=None, weather_service=None, **kwargs):
         pygame.init()
         if hasattr(pygame, 'font') and not pygame.font.get_init():
             pygame.font.init()
         
-        # Support both current GPIO sensor naming and legacy aliases
-        self.smoke = sensor_smoke if sensor_smoke is not None else sensor_mq
-        self.mic = sensor_mic if sensor_mic is not None else sensor_sound
-        self.dht = sensor_dht if sensor_dht is not None else sensor_humidity
+        self.mq = sensor_mq or kwargs.get('sensor_smoke')
+        self.sound = sensor_sound or kwargs.get('sensor_mic')
+        self.humidity = sensor_humidity or kwargs.get('sensor_dht')
         self.weather = weather_service
         
         flags = pygame.FULLSCREEN if config.FULLSCREEN else pygame.RESIZABLE
@@ -45,7 +44,7 @@ class DisplayManager:
         # Giant Font Scaling relative to screen height
         font_name = pygame.font.get_default_font()
         clock_sz = int(self.height * 0.36)     # Massive clock font filling screen center
-        heading_sz = int(self.height * 0.08)   # Big headings
+        heading_sz = int(self.height * 0.08)   # Big headings / Numbers
         subhead_sz = int(self.height * 0.055)
         small_sz = int(self.height * 0.042)
         badge_sz = int(self.height * 0.035)
@@ -105,18 +104,22 @@ class DisplayManager:
     def _render(self):
         draw_ambient_background(self.surface)
         
-        smoke_data = self.smoke.get_readings() if self.smoke else {}
-        mic_data = self.mic.get_readings() if self.mic else {}
-        dht_data = self.dht.get_readings() if self.dht else {}
+        mq_data = self.mq.get_readings() if self.mq else {}
+        sound_data = self.sound.get_readings() if self.sound else {}
+        humidity_data = self.humidity.get_readings() if self.humidity else {}
         weather_data = self.weather.get_weather() if self.weather else {}
         
         active_screen = self.screens[self.current_screen_idx]
         if active_screen == "TIME":
-            self.time_screen.draw(smoke_data, mic_data)
+            self.time_screen.draw(mq_data, sound_data)
         elif active_screen == "WEATHER":
             self.weather_screen.draw(weather_data)
         elif active_screen == "SENSORS":
-            self.sensor_screen.draw(smoke_data, mic_data, dht_data)
+            self.sensor_screen.draw(
+                mq_data=mq_data,
+                sound_data=sound_data,
+                humidity_data=humidity_data
+            )
             
         # Top Timer Line
         w, _ = self.surface.get_size()
