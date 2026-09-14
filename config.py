@@ -6,8 +6,8 @@ import os
 ROTATION_INTERVAL = 10  # 10 seconds per screen
 FPS = 30
 
-# Resolution setup
-FULLSCREEN = os.environ.get("PI_DASHBOARD_FULLSCREEN", "False").lower() == "true"
+# Fullscreen Default: Set to True by default so it always opens in Fullscreen Mode
+FULLSCREEN = os.environ.get("PI_DASHBOARD_FULLSCREEN", "True").lower() == "true"
 SCREEN_WIDTH = int(os.environ.get("PI_DASHBOARD_WIDTH", "800"))
 SCREEN_HEIGHT = int(os.environ.get("PI_DASHBOARD_HEIGHT", "480"))
 
