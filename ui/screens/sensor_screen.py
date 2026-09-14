@@ -6,15 +6,16 @@ class SensorScreen:
     """
     Screen 3: Full-Screen Local Hardware Environment & Room Metrics View.
     Maximized container displaying 3 large glass metric cards with GIANT BOLD numeric readouts:
-    1. Local Room Humidity (A0): e.g. 58%
-    2. Air Quality AQI (A1): e.g. 145 PPM
-    3. Noise Level (A3): e.g. 58 dB
+    1. Local Room Humidity (% RH)
+    2. Air Quality AQI / Smoke (PPM)
+    3. Sound & Noise Level (dB)
     """
     def __init__(self, surface: pygame.Surface, fonts: dict):
         self.surface = surface
         self.fonts = fonts
 
-    def draw(self, mq_data: dict = None, sound_data: dict = None, humidity_data: dict = None, **kwargs):
+    def draw(self, mq_data: dict = None, sound_data: dict = None, humidity_data: dict = None,
+             smoke_data: dict = None, mic_data: dict = None, dht_data: dict = None, **kwargs):
         rect = self.surface.get_rect()
         w, h = rect.width, rect.height
         
@@ -26,22 +27,24 @@ class SensorScreen:
         title_surf = self.fonts["badge"].render("REAL-TIME HARDWARE SENSORS TELEMETRY", True, config.TEXT_MUTED)
         self.surface.blit(title_surf, (card_rect.centerx - title_surf.get_width() // 2, card_rect.top + int(card_h * 0.05)))
         
-        # Support both current sensor dictionary names and kwargs fallback
-        hum = humidity_data or kwargs.get('dht_data', {}) or {}
-        mq = mq_data or kwargs.get('smoke_data', {}) or {}
-        snd = sound_data or kwargs.get('mic_data', {}) or {}
+        # Smart Dictionary Resolver to handle ADC sensors or direct GPIO sensors
+        hum = humidity_data or dht_data or kwargs.get('sensor_dht', {}) or {}
+        mq = mq_data or smoke_data or kwargs.get('sensor_smoke', {}) or {}
+        snd = sound_data or mic_data or kwargs.get('sensor_mic', {}) or {}
 
-        # Extract numeric display strings
-        hum_num = hum.get('display', f"{hum.get('humidity', '--')}")
+        # 1. Humidity Display (Numeric %)
+        hum_num = hum.get('display', f"{hum.get('humidity', '--')}%")
         if not str(hum_num).endswith('%') and hum_num != '--':
             hum_num = f"{hum_num}%"
-        hum_sub = hum.get('subtext', f"{hum.get('voltage', '--')}V  ·  {hum.get('status', 'NORMAL')}")
+        hum_sub = hum.get('subtext', f"{hum.get('status', 'COMFORTABLE')}")
 
+        # 2. Air Quality / MQ Display (Numeric PPM)
         mq_num = mq.get('display', f"{mq.get('ppm', '--')} PPM")
-        mq_sub = mq.get('subtext', f"{mq.get('voltage', '--')}V  ·  {mq.get('status', 'GOOD')}")
+        mq_sub = mq.get('subtext', f"{mq.get('status', 'GOOD')}")
 
+        # 3. Sound / Mic Display (Numeric dB)
         snd_num = snd.get('display', f"{snd.get('db', '--')} dB")
-        snd_sub = snd.get('subtext', f"{snd.get('voltage', '--')}V  ·  {snd.get('status', 'QUIET')}")
+        snd_sub = snd.get('subtext', f"{snd.get('status', 'QUIET')}")
 
         # 3 Side-by-Side Large Glass Metric Cards
         col_w = int(card_rect.width * 0.29)
@@ -51,9 +54,9 @@ class SensorScreen:
         card_y = card_rect.top + int(card_h * 0.16)
         
         metrics = [
-            (f"ROOM HUMIDITY (A0)", hum_num, hum_sub),
-            (f"AIR QUALITY (A1)", mq_num, mq_sub),
-            (f"NOISE LEVEL (A3)", snd_num, snd_sub)
+            ("ROOM HUMIDITY", hum_num, hum_sub),
+            ("AIR QUALITY (AQI)", mq_num, mq_sub),
+            ("NOISE LEVEL", snd_num, snd_sub)
         ]
         
         for i, (col_title, num_val, subtext_val) in enumerate(metrics):
@@ -68,6 +71,6 @@ class SensorScreen:
             v_surf = self.fonts["heading"].render(str(num_val), True, config.TEXT_PRIMARY)
             self.surface.blit(v_surf, (col_rect.centerx - v_surf.get_width() // 2, col_rect.top + int(col_h * 0.32)))
             
-            # Secondary Subtext Status & Voltage
+            # Secondary Subtext Status
             s_surf = self.fonts["small"].render(str(subtext_val), True, config.TEXT_SECONDARY)
             self.surface.blit(s_surf, (col_rect.centerx - s_surf.get_width() // 2, col_rect.bottom - int(col_h * 0.20)))

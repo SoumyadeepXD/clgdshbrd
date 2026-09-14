@@ -13,14 +13,11 @@ class DHTSensor:
         self.sensor_type = sensor_type
         self.is_mock = force_mock
         
-        # Resolve physical pin mapping if USE_PHYSICAL_PINS is enabled
         self.bcm_pin = self._resolve_pin(self.pin)
-        
         self.device = None
         self.last_read_time = 0.0
-        self.poll_interval = 2.0  # DHT sensors require >= 1.5-2.0s between reads
+        self.poll_interval = 2.0
         
-        # Last known valid readings
         self.last_temp = 25.0
         self.last_humidity = 55
         self.last_status = "COMFORTABLE"
@@ -30,7 +27,6 @@ class DHTSensor:
 
     def _resolve_pin(self, pin: int) -> int:
         if getattr(config, "USE_PHYSICAL_PINS", False):
-            # Physical Pin 7 corresponds to BCM GPIO 4
             mapping = {7: 4, 11: 17, 13: 27}
             return mapping.get(pin, pin)
         return pin
@@ -60,7 +56,6 @@ class DHTSensor:
     def get_readings(self) -> dict:
         now = time.time()
         
-        # Return cached values if polled faster than poll_interval
         if not self.is_mock and self.device and (now - self.last_read_time >= self.poll_interval):
             self.last_read_time = now
             try:
@@ -70,17 +65,14 @@ class DHTSensor:
                     self.last_temp = round(float(temp), 1)
                     self.last_humidity = int(max(5, min(99, humidity)))
             except RuntimeError:
-                # DHT sensors frequently throw transient checksum/timing errors; keep last valid reading
                 pass
             except Exception as e:
                 print(f"[DHTSensor] Error reading DHT on GPIO {self.bcm_pin}: {e}")
 
         elif self.is_mock:
-            # Simulate realistic temperature & humidity
             self.last_temp = round(24.5 + 2.0 * math.sin(now / 30.0), 1)
             self.last_humidity = int(max(10, min(90, 54.0 + 8.0 * math.sin(now / 20.0))))
 
-        # Determine comfort status
         if self.last_humidity < 35:
             comfort = "DRY"
         elif self.last_humidity <= 65:
@@ -88,7 +80,7 @@ class DHTSensor:
         else:
             comfort = "HUMID"
             
-        status_str = f"{int(round(self.last_temp))}°C • {comfort}"
+        subtext = f"{self.last_temp}°C  ·  GPIO {self.bcm_pin}  ·  {comfort}"
 
         return {
             "humidity": self.last_humidity,
@@ -96,6 +88,6 @@ class DHTSensor:
             "temp": self.last_temp,
             "temp_str": f"{self.last_temp}°C",
             "display": f"{self.last_humidity}%",
-            "status": status_str,
-            "comfort": comfort
+            "subtext": subtext,
+            "status": comfort
         }

@@ -5,8 +5,9 @@ import config
 class SmokeSensor:
     """
     Driver for Smoke / Gas Sensors (MQ Series digital DO pin)
-    connected directly to Raspberry Pi GPIO (default Pin 11).
+    connected directly to Raspberry Pi GPIO (default Pin 11 / GPIO 17).
     Digital output comparator triggers LOW (active low) when smoke/gas exceeds threshold.
+    Returns numeric PPM representation & real-time digital detection status.
     """
     def __init__(self, pin: int = config.SMOKE_PIN, active_low: bool = config.SMOKE_ACTIVE_LOW, force_mock: bool = config.FORCE_MOCK_SENSORS):
         self.pin = pin
@@ -21,7 +22,6 @@ class SmokeSensor:
 
     def _resolve_pin(self, pin: int) -> int:
         if getattr(config, "USE_PHYSICAL_PINS", False):
-            # Physical Pin 11 corresponds to BCM GPIO 17
             mapping = {7: 4, 11: 17, 13: 27}
             return mapping.get(pin, pin)
         return pin
@@ -57,40 +57,37 @@ class SmokeSensor:
                 elif self.gpio_lib == "gpiozero" and self.device:
                     return 0 if self.device.is_active else 1
             except Exception as e:
-                print(f"[SmokeSensor] Error reading pin {self.bcm_pin}: {e}. Using mock fallback.")
-        
-        # Mock mode: normally 1 (clean air), occasionally simulated
+                print(f"[SmokeSensor] Error reading pin {self.bcm_pin}: {e}.")
         return 1
 
     def get_readings(self) -> dict:
         raw_val = self.read_raw()
         
         if self.is_mock:
-            # Simulate clear air by default
             is_detected = False
         else:
             is_detected = (raw_val == 0) if self.active_low else (raw_val == 1)
 
         if is_detected:
-            display = "ALERT!"
-            subtext = "SMOKE DETECTED"
-            status = "DANGER"
-            color = (255, 110, 110)
             ppm = 950
+            display = f"{ppm} PPM"
+            subtext = "ALERT · GAS DETECTED"
+            status = "HAZARDOUS"
+            color = (255, 110, 110)
         else:
-            display = "CLEAR"
-            subtext = "AIR CLEAN"
-            status = "GOOD"
-            color = config.TEXT_PRIMARY
             ppm = 120
+            display = f"{ppm} PPM"
+            subtext = "PIN 11 · AIR CLEAN"
+            status = "GOOD AIR"
+            color = config.TEXT_PRIMARY
 
         return {
             "detected": is_detected,
             "raw": raw_val,
+            "ppm": ppm,
             "display": display,
             "subtext": subtext,
             "status": status,
             "color": color,
-            "ppm": ppm,
             "pin": self.bcm_pin
         }
